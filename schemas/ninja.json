@@ -1,0 +1,11 @@
+{
+	"name": "Kakashi",
+	"rank": "Jonin",
+	"skills": ["Chidori", "Genjutsu", "Stealth"],
+	"stats": {
+		"speed": 9,
+		"power": 8,
+		"chakra": 9
+	}
+}
+
