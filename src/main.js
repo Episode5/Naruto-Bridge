@@ -1,4 +1,4 @@
-// === Naruto Bridge: Core Framework (Interface Jutsu) ===
+// === Naruto Bridge: Core Framework (Flow Control Jutsu) ===
 
 const fs = require("fs");
 const { readScroll, writeScroll } = require("./readScroll");
@@ -7,71 +7,69 @@ const { describe } = require("./analyzeScroll");
 const { fetchScroll } = require("./FetchScrolls");
 const { summarizeData } = require("./summarizeScroll");
 
-const arg = process.argv[2];
-if (!arg) {
+const args = process.argv.slice(2);
+
+if (args.length === 0) {
   console.log("Usage:");
-  console.log("  node src/main.js <path-or-url>");
-  console.log("Example:");
-  console.log("  node src/main.js schemas/ninja.json");
-  console.log("  node src/main.js https://jsonplaceholder.typicode.com/users/1");
+  console.log("  node src/main.js <path-or-url> [more paths/urls...]");
   process.exit(0);
 }
 
-// --- Helper to detect if the argument is a URL ---
 function isURL(str) {
   return /^https?:\/\//i.test(str);
 }
 
-// --- Unified logic ---
-async function runBridge(source) {
-  let data;
+async function processScroll(source, index, total) {
+  console.log(`\n=== Processing Scroll ${index + 1} of ${total} ===`);
 
+  let data;
   try {
     if (isURL(source)) {
-      console.log("\n=== Fetching remote scroll ===");
+      console.log("Fetching remote scroll:", source);
       data = await fetchScroll(source);
     } else {
-      console.log("\n=== Reading local scroll ===");
+      console.log("Reading local scroll:", source);
       data = readScroll(source);
     }
   } catch (err) {
     console.error("Error reading scroll:", err.message);
-    process.exit(1);
+    return;
   }
 
   if (!data) {
-    console.error("No data found.");
-    process.exit(1);
+    console.error("No data found for", source);
+    return;
   }
 
-  // --- Describe structure ---
   console.log("\n-- Scroll Structure --");
   describe(data);
-// --- Generate summary ---
-const summary = summarizeData(data);
-console.log("\n-- Data Summary --");
-console.log(
-  `Keys: ${summary.keyCount}, Arrays: ${summary.arrayCount}, Objects: ${summary.objectCount}`
-);
-console.log(
-  `Numeric fields: ${summary.numberCount}, Average numeric value: ${summary.avg}`
-);
 
-  // --- Transform (forward & reverse) ---
+  const summary = summarizeData(data);
+  console.log("\n-- Data Summary --");
+  console.log(
+    `Keys: ${summary.keyCount}, Arrays: ${summary.arrayCount}, Objects: ${summary.objectCount}`
+  );
+  console.log(
+    `Numeric fields: ${summary.numberCount}, Average numeric value: ${summary.avg}`
+  );
+
   const model = forwardTransform(data);
-  console.log("\n-- Internal Model --");
-  console.log(model);
-
   const newJson = reverseTransform(model);
-  const outPath = source.startsWith("http")
-    ? "schemas/remote_output.json"
-    : source.replace(".json", "_output.json");
+
+  const outPath = isURL(source)
+    ? `schemas/remote_output_${index + 1}.json`
+    : source.replace(".json", `_output_${index + 1}.json`);
 
   writeScroll(outPath, newJson);
-  console.log("\nPipeline complete →", outPath);
 }
 
-// Run it
-runBridge(arg);
+async function run() {
+  console.log("=== Naruto Bridge Multi-Scroll Mode ===");
+  for (let i = 0; i < args.length; i++) {
+    await processScroll(args[i], i, args.length);
+  }
+  console.log("\nAll scrolls complete.\n");
+}
 
+run();
 
