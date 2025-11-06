@@ -1,6 +1,7 @@
-// === Naruto Bridge: Core Framework (Flow Control Jutsu) ===
+// === Naruto Bridge: Core Framework (Cross-System Flow) ===
 
 const fs = require("fs");
+const pathLib = require("path");
 const { readScroll, writeScroll } = require("./readScroll");
 const { forwardTransform, reverseTransform } = require("./transformScroll");
 const { describe } = require("./analyzeScroll");
@@ -11,7 +12,10 @@ const args = process.argv.slice(2);
 
 if (args.length === 0) {
   console.log("Usage:");
-  console.log("  node src/main.js <path-or-url> [more paths/urls...]");
+  console.log("  naruto-bridge <path-or-url> [more paths/urls]");
+  console.log("Examples:");
+  console.log("  naruto-bridge schemas/ninja.json");
+  console.log("  naruto-bridge https://jsonplaceholder.typicode.com/users/1");
   process.exit(0);
 }
 
@@ -24,6 +28,11 @@ async function processScroll(source, index, total) {
 
   let data;
   try {
+    // --- Normalize paths for Windows/Unix compatibility ---
+    if (!isURL(source)) {
+      source = pathLib.normalize(source);
+    }
+
     if (isURL(source)) {
       console.log("Fetching remote scroll:", source);
       data = await fetchScroll(source);
