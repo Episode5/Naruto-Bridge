@@ -1,6 +1,6 @@
 {
   "name": "naruto-bridge",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A modular data bridge framework for structured JSON transformation and analysis.",
   "main": "src/main.js",
   "bin": {
@@ -9,8 +9,13 @@
   "scripts": {
     "start": "node src/main.js"
   },
-  "keywords": ["json", "bridge", "data", "framework", "cli"],
+  "keywords": [
+    "json",
+    "bridge",
+    "data",
+    "framework",
+    "cli"
+  ],
   "author": "Ethan McBee",
   "license": "MIT"
 }
-
