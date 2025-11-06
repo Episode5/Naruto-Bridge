@@ -5,6 +5,7 @@ const { readScroll, writeScroll } = require("./readScroll");
 const { forwardTransform, reverseTransform } = require("./transformScroll");
 const { describe } = require("./analyzeScroll");
 const { fetchScroll } = require("./FetchScrolls");
+const { summarizeData } = require("./summarizeScroll");
 
 const arg = process.argv[2];
 if (!arg) {
@@ -46,6 +47,15 @@ async function runBridge(source) {
   // --- Describe structure ---
   console.log("\n-- Scroll Structure --");
   describe(data);
+// --- Generate summary ---
+const summary = summarizeData(data);
+console.log("\n-- Data Summary --");
+console.log(
+  `Keys: ${summary.keyCount}, Arrays: ${summary.arrayCount}, Objects: ${summary.objectCount}`
+);
+console.log(
+  `Numeric fields: ${summary.numberCount}, Average numeric value: ${summary.avg}`
+);
 
   // --- Transform (forward & reverse) ---
   const model = forwardTransform(data);
