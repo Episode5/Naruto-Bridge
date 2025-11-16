@@ -1,0 +1,42 @@
+{
+  "shard": {
+    "shard_id": "ethan-bridge-001",
+    "owner": {
+      "display_name": "Ethan",
+      "local_uuid": "00000000-0000-0000-0000-000000000000"
+    },
+    "universe_manifest": {
+      "title": "Naruto Bridge: Ethan Shard",
+      "theme": "terminal TRON ninja / retro-futurist grid",
+      "description": "A personal universe defined through play, mined into existence via constrained worldbuilding.",
+      "version": "0.2.0-tron-seeded",
+      "rules": [],
+      "entities": [],
+      "zones": [],
+      "timelines": []
+    }
+  },
+
+  "tron": {
+    "status": "offline",
+    "destination": "TRON",
+    "last_sync_unix": null,
+    "export": {
+      "enabled": true,
+      "last_export_path": null,
+      "format_version": "1.0.0"
+    },
+    "exposed_surfaces": {
+      "leaderboard": false,
+      "lore_entries": false,
+      "artifacts": false,
+      "stats": false
+    }
+  },
+
+  "mining": {
+    "enabled": true,
+    "description": "Mining = defining the scope of an artificial universe under constraints.",
+    "events": []
+  }
+}
