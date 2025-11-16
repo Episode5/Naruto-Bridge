@@ -36,7 +36,12 @@
 
   "mining": {
     "enabled": true,
-    "description": "Mining = defining the scope of an artificial universe under constraints.",
+    "mode": "dual",
+    "description": "Mining = defining AND discovering the scope of an artificial universe under constraints.",
+    "version": "1.0.0",
+    "total_events": 0,
+    "last_event_at_unix": null,
     "events": []
   }
 }
+
