@@ -9,7 +9,7 @@
       "title": "Naruto Bridge: Ethan Shard",
       "theme": "terminal TRON ninja / retro-futurist grid",
       "description": "A personal universe defined through play, mined into existence via constrained worldbuilding.",
-      "version": "0.2.0-tron-seeded",
+      "version": "0.3.0-tron-timecore",
       "rules": [],
       "entities": [],
       "zones": [],
@@ -32,6 +32,13 @@
       "artifacts": false,
       "stats": false
     }
+  },
+
+  "timecore": {
+    "mode": "real_unix",
+    "description": "TRON Timecore tracks real-world UNIX timestamps for all mining events.",
+    "created_at_unix": 0,
+    "last_event_at_unix": 0
   },
 
   "mining": {
