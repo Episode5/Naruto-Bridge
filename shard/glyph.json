@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "shard_id": "ethan-bridge-001",
+  "description": "TRON glyph: evolving symbolic representation of the shard's patterns.",
+  "core_tokens": [
+    "TRON-SHARD-ETHAN-0001"
+  ],
+  "themes": [
+    "absolute_zero",
+    "mother_of_pearl",
+    "frozen_depth"
+  ],
+  "avatar_seed": "absolute_zero_mother_of_pearl",
+  "last_updated_unix": 0
+}
