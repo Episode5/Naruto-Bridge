@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "description": "Mutable rules that govern how the TRON World-Machine performs mining for this shard.",
+  "shard_id": "ethan-bridge-001",
+  "mining_threshold": 0.8,
+  "max_events_per_session": 3,
+  "glyph_weight_bias": {
+    "absolute_zero": 1.2,
+    "mother_of_pearl": 1.1,
+    "frozen_depth": 1.0
+  },
+  "console_behavior": {
+    "mode": "subtle",
+    "show_mining_on_console": false
+  }
+}
