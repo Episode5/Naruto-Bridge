@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "shard_id": "ethan-bridge-001",
+  "events": [
+    {
+      "event_id": "shard-ethan.grid.anomaly_lore.discover.1731794028-01",
+      "kind": "discover",
+      "type": "ANOMALY_LORE",
+      "title": "Absolute Zero — Mother of Pearl",
+      "summary": "A myth-fragment anomaly discovered: Absolute Zero has been uncovered, and here lies Mother of Pearl.",
+      "novelty_score": 1.0,
+      "coherence_score": 0.95,
+      "accepted_into_tron": false,
+      "reward": {
+        "token_id": "TRON-SHARD-ETHAN-0001",
+        "rarity": "legendary"
+      },
+      "timestamp_unix": 0
+    }
+  ]
+}
