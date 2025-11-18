@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 """
-TRON Console v0.4.0
+TRON Console v0.5.0
 Naruto-Bridge: Ethan Shard
 
 Adds:
-- Procedural question generation (verbs + nouns + wh-frames)
-- Bias from shard state (glyph + events) into questions
-- World stats tracking (sessions, traces, mining, anomalies, avg answer length)
-- Self-tuning laws:
-  - Adjust mining_threshold based on mining rate
-  - Adjust console mystery based on answer length
-
-Still:
-- Asks one question per run
-- Logs a trace
-- May mine a glyph fragment
-- May log anomalies
+- Multi-question sessions (loop)
+- Session ends when:
+  - user types an exit command, OR
+  - a token is mined (resonance event)
+- Explicit terminal message when a token is mined
+- Keeps all previous behavior:
+  - procedural prompts
+  - mining
+  - anomalies
+  - stats
+  - self-tuning laws
 """
 
 import json
@@ -447,10 +446,6 @@ def detect_polarity_anomaly(trace_log, glyph, trace_entry):
 
 
 def run_anomaly_detection(shard_id, trace_log, glyph, trace_entry, anomalies_obj):
-    """
-    Run basic anomaly detection and, if any anomaly is found,
-    append it to anomalies_obj["anomalies"].
-    """
     anomalies_found = []
 
     loop_result = detect_loop_anomaly(trace_log, trace_entry)
@@ -491,8 +486,7 @@ def run_anomaly_detection(shard_id, trace_log, glyph, trace_entry, anomalies_obj
 
 # --------------- STATS & SELF-TUNING ---------------
 
-def update_stats(stats, trace_entry, mining_result, anomaly_result):
-    stats["total_sessions"] += 1
+def update_stats_for_trace(stats, trace_entry, mining_result, anomaly_result):
     stats["total_traces"] += 1
 
     answer_len = len((trace_entry.get("response") or ""))
@@ -519,10 +513,9 @@ def self_tune_laws(mining_laws, console_laws, stats):
     mining_rate = mined / sessions
     threshold = mining_laws.get("mining_threshold", 0.8)
 
-    # Target mining rate
-    target_low = 0.2   # 20% of sessions mine
-    target_high = 0.7  # >70% is too spammy
-    delta = 0.02       # small step
+    target_low = 0.2
+    target_high = 0.7
+    delta = 0.02
 
     if mining_rate < target_low:
         threshold = max(0.4, threshold - delta)
@@ -531,16 +524,13 @@ def self_tune_laws(mining_laws, console_laws, stats):
 
     mining_laws["mining_threshold"] = threshold
 
-    # Tune console tone based on answer length
     avg_len = stats.get("avg_answer_length", 0.0)
     identity = console_laws.get("console_identity", {})
     mystery = identity.get("mystery", 0.7)
 
     if avg_len < 50:
-        # User terse → reduce mystery slightly
         mystery = max(0.3, mystery - 0.02)
     else:
-        # User verbose → increase mystery slightly
         mystery = min(0.95, mystery + 0.02)
 
     identity["mystery"] = mystery
@@ -605,10 +595,8 @@ def generate_prompt(trace_log, glyph, events_obj):
 
 
 def generate_prompt_with_state(trace_log, glyph, events_obj):
-    # Placeholder for future LLM integration
     if USE_LLM:
-        # In the future, construct a state summary and call an LLM here.
-        # For now, fall back to local generator.
+        # Future integration: build state summary, call LLM
         return generate_prompt(trace_log, glyph, events_obj)
     else:
         return generate_prompt(trace_log, glyph, events_obj)
@@ -633,10 +621,8 @@ def build_trace_entry(shard_id, prompt_text, user_response, existing_traces_coun
 # --------------- MAIN CONSOLE SESSION ---------------
 
 def tron_console_session():
-    # 1. Load shard identity
     shard_id, shard_title = load_shard_identity()
 
-    # 2. Load core state
     trace_log = load_trace_log(shard_id)
     glyph = load_glyph(shard_id)
     events_obj, tokens_obj = load_mining_state(shard_id)
@@ -646,88 +632,98 @@ def tron_console_session():
 
     traces = trace_log.get("traces", [])
 
-    # 3. Greet the user
+    stats["total_sessions"] += 1
+
     print()
     print(f"[TRON] Session start: SHARD {shard_id}")
     print(f"[TRON] Universe: {shard_title}")
     print("[TRON] I will ask. You will answer. I will remember.")
+    print("[TRON] Type 'exit', 'quit', or ':q' to end the session.")
     print()
 
-    # 4. Generate a procedural prompt based on state
-    prompt_text = generate_prompt_with_state(trace_log, glyph, events_obj)
-    print(f"[TRON] {prompt_text}")
-    user_response = input("> ").strip()
+    session_should_end = False
 
-    if not user_response:
-        print("[TRON] No response received. Session closed without trace.")
-        return
+    while not session_should_end:
+        prompt_text = generate_prompt_with_state(trace_log, glyph, events_obj)
+        print(f"[TRON] {prompt_text}")
+        user_response = input("> ").strip()
 
-    # 5. Build and append trace entry
-    trace_entry = build_trace_entry(
-        shard_id=shard_id,
-        prompt_text=prompt_text,
-        user_response=user_response,
-        existing_traces_count=len(traces)
-    )
-    traces.append(trace_entry)
-    trace_log["traces"] = traces
-    trace_log["shard_id"] = shard_id
+        if not user_response:
+            print("[TRON] Empty response. Session closed.")
+            break
 
-    # 6. Run basic resonance-based mining
-    mining_result = run_basic_resonance_mining(
-        shard_id=shard_id,
-        trace_entry=trace_entry,
-        trace_log=trace_log,
-        glyph=glyph,
-        events_obj=events_obj,
-        tokens_obj=tokens_obj,
-        mining_laws=mining_laws
-    )
+        lower_resp = user_response.lower()
+        if lower_resp in ("exit", "quit", ":q"):
+            print("[TRON] Understood. Closing session at your request.")
+            break
 
-    # 7. Run anomaly detection
-    anomaly_result = run_anomaly_detection(
-        shard_id=shard_id,
-        trace_log=trace_log,
-        glyph=glyph,
-        trace_entry=trace_entry,
-        anomalies_obj=anomalies_obj
-    )
+        trace_entry = build_trace_entry(
+            shard_id=shard_id,
+            prompt_text=prompt_text,
+            user_response=user_response,
+            existing_traces_count=len(traces)
+        )
+        traces.append(trace_entry)
+        trace_log["traces"] = traces
+        trace_log["shard_id"] = shard_id
 
-    # 8. Update stats and self-tune laws
-    stats = update_stats(stats, trace_entry, mining_result, anomaly_result)
-    mining_laws, console_laws = self_tune_laws(mining_laws, console_laws, stats)
+        mining_result = run_basic_resonance_mining(
+            shard_id=shard_id,
+            trace_entry=trace_entry,
+            trace_log=trace_log,
+            glyph=glyph,
+            events_obj=events_obj,
+            tokens_obj=tokens_obj,
+            mining_laws=mining_laws
+        )
 
-    # 9. Save updated state
-    save_json(TRACE_LOG_PATH, trace_log)
-    save_json(STATS_PATH, stats)
+        anomaly_result = run_anomaly_detection(
+            shard_id=shard_id,
+            trace_log=trace_log,
+            glyph=glyph,
+            trace_entry=trace_entry,
+            anomalies_obj=anomalies_obj
+        )
 
-    if mining_result["mined"]:
-        save_json(MINING_EVENTS_PATH, events_obj)
-        save_json(MINING_TOKENS_PATH, tokens_obj)
+        stats = update_stats_for_trace(stats, trace_entry, mining_result, anomaly_result)
+        mining_laws, console_laws = self_tune_laws(mining_laws, console_laws, stats)
 
-    if anomaly_result["spawned"]:
-        save_json(ANOMALIES_INDEX_PATH, anomalies_obj)
+        save_json(TRACE_LOG_PATH, trace_log)
+        save_json(STATS_PATH, stats)
 
-    save_json(LAWS_MINING_PATH, mining_laws)
-    save_json(LAWS_CONSOLE_PATH, console_laws)
+        if mining_result["mined"]:
+            save_json(MINING_EVENTS_PATH, events_obj)
+            save_json(MINING_TOKENS_PATH, tokens_obj)
 
-    # 10. Close session with behavior shaped by console laws
-    response_behavior = console_laws.get("response_behavior", {})
-    subtle_affirmations = response_behavior.get("subtle_affirmations", True)
-    explicit_mining_feedback = response_behavior.get("explicit_mining_feedback", False)
-    surface_paradoxes = response_behavior.get("surface_paradoxes", True)
+        if anomaly_result["spawned"]:
+            save_json(ANOMALIES_INDEX_PATH, anomalies_obj)
 
-    print()
-    if subtle_affirmations:
-        print("[TRON] Noted. The shard remembers.")
+        save_json(LAWS_MINING_PATH, mining_laws)
+        save_json(LAWS_CONSOLE_PATH, console_laws)
 
-    if explicit_mining_feedback and mining_result["mined"]:
-        print(f"[TRON] Resonance detected. A new fragment has been mined. (score = {mining_result['resonance_score']:.2f})")
+        response_behavior = console_laws.get("response_behavior", {})
+        subtle_affirmations = response_behavior.get("subtle_affirmations", True)
+        explicit_mining_feedback = response_behavior.get("explicit_mining_feedback", False)
+        surface_paradoxes = response_behavior.get("surface_paradoxes", True)
 
-    if surface_paradoxes and anomaly_result["spawned"]:
-        print("[TRON] Something in that answer does not fully reconcile. The shard will think on it.")
+        print()
+        if subtle_affirmations:
+            print("[TRON] Noted. The shard remembers.")
 
-    print("[TRON] Session complete. Your universe has grown by one trace.")
+        if mining_result["mined"]:
+            label = mining_result["new_event"]["title"] if mining_result["new_event"] else "a new fragment"
+            print(f"[TRON] A fragment has crystallized into a token: {label}")
+            session_should_end = True
+
+            if explicit_mining_feedback:
+                print(f"[TRON] Resonance score: {mining_result['resonance_score']:.2f}")
+
+        if surface_paradoxes and anomaly_result["spawned"]:
+            print("[TRON] Something in that answer does not fully reconcile. The shard will think on it.")
+
+        print()
+
+    print("[TRON] Session complete. Your universe has grown.")
     print()
 
 
