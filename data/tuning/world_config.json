@@ -3,8 +3,11 @@
   "rng_seed": null,
   "paths": {
     "lexicon": "data/lexicon_base.txt",
-    "world_state": "stats/world_state.json",
+    "world_state": "world/world_state.json",
     "mining_tokens": "mining/tokens.json"
+  },
+  "units": {
+    "size": 1
   },
   "clusters": {
     "target_units_per_zone_mean": 20,
@@ -34,6 +37,8 @@
     "region_name_word_count_min": 2,
     "region_name_word_count_max": 4,
     "region_use_roman_suffix": true,
+    "zone_name_source": "local_units",
+    "region_name_source": "local_units_and_mined_tokens",
     "zone": {
       "min_words": 2,
       "max_words": 3,
