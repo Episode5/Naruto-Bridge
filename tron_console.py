@@ -22,6 +22,8 @@ import time
 import random
 from pathlib import Path
 
+from core.random_engine import RandomizationEngine
+
 BASE_DIR = Path(__file__).resolve().parent
 
 # Paths
@@ -38,6 +40,7 @@ LAWS_CONSOLE_PATH = BASE_DIR / "laws" / "console.json"
 ANOMALIES_INDEX_PATH = BASE_DIR / "anomalies" / "index.json"
 
 STATS_PATH = BASE_DIR / "stats" / "world_stats.json"
+WORLD_STATE_PATH = BASE_DIR / "world" / "world_state.json"
 
 # LLM toggle placeholder (future integration)
 USE_LLM = False
@@ -629,6 +632,8 @@ def tron_console_session():
     mining_laws, console_laws = load_laws(shard_id)
     anomalies_obj = load_anomalies(shard_id)
     stats = load_stats(shard_id)
+    engine = RandomizationEngine()
+    engine.load_state(WORLD_STATE_PATH)
 
     traces = trace_log.get("traces", [])
 
@@ -677,6 +682,11 @@ def tron_console_session():
             mining_laws=mining_laws
         )
 
+        if mining_result["mined"]:
+            new_token = mining_result.get("new_token")
+            if new_token:
+                engine.register_mined_token(new_token)
+
         anomaly_result = run_anomaly_detection(
             shard_id=shard_id,
             trace_log=trace_log,
@@ -700,6 +710,21 @@ def tron_console_session():
 
         save_json(LAWS_MINING_PATH, mining_laws)
         save_json(LAWS_CONSOLE_PATH, console_laws)
+
+        # --- World exploration step ---
+        units = engine.travel_units(4)
+
+        current_zone = engine.get_current_zone()
+        current_region = engine.get_current_region()
+
+        if current_zone:
+            zone_name = current_zone.name or f"Zone {current_zone.id}"
+            print(f"[TRON] The shard moves through a new zone: {zone_name}")
+        if current_region:
+            region_name = current_region.name or f"Region {current_region.id}"
+            print(f"[TRON] The shard now resides within region: {region_name}")
+
+        engine.save_state(WORLD_STATE_PATH)
 
         response_behavior = console_laws.get("response_behavior", {})
         subtle_affirmations = response_behavior.get("subtle_affirmations", True)
