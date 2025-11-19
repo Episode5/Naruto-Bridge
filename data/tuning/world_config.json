@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "rng_seed": null,
+  "paths": {
+    "lexicon": "data/lexicon_base.txt",
+    "world_state": "stats/world_state.json",
+    "mining_tokens": "mining/tokens.json"
+  },
+  "clusters": {
+    "units_per_zone": {
+      "mean": 20,
+      "std_dev": 4,
+      "min": 12,
+      "max": 30
+    },
+    "zones_per_region": {
+      "mean": 13,
+      "std_dev": 3,
+      "min": 8,
+      "max": 20
+    }
+  },
+  "naming": {
+    "zone": {
+      "min_words": 2,
+      "max_words": 3,
+      "candidate_pool": 6
+    },
+    "region": {
+      "min_words": 2,
+      "max_words": 4,
+      "token_weight": 1.5,
+      "unit_weight": 1.0,
+      "roman_suffix": true,
+      "roman_after_zones": 2,
+      "roman_offset": 0
+    }
+  },
+  "persistence": {
+    "autosave": true
+  }
+}
