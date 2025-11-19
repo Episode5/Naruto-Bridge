@@ -18,6 +18,10 @@
     "target_zones_per_region_std": 3,
     "min_zones_per_region": 8,
     "max_zones_per_region": 20,
+    "world_state": "stats/world_state.json",
+    "mining_tokens": "mining/tokens.json"
+  },
+  "clusters": {
     "units_per_zone": {
       "mean": 20,
       "std_dev": 4,
