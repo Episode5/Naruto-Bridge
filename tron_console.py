@@ -22,6 +22,8 @@ import time
 import random
 from pathlib import Path
 
+from core.random_engine import RandomizationEngine
+
 BASE_DIR = Path(__file__).resolve().parent
 
 # Paths
@@ -38,6 +40,7 @@ LAWS_CONSOLE_PATH = BASE_DIR / "laws" / "console.json"
 ANOMALIES_INDEX_PATH = BASE_DIR / "anomalies" / "index.json"
 
 STATS_PATH = BASE_DIR / "stats" / "world_stats.json"
+WORLD_STATE_PATH = BASE_DIR / "world" / "world_state.json"
 
 # LLM toggle placeholder (future integration)
 USE_LLM = False
@@ -629,6 +632,13 @@ def tron_console_session():
     mining_laws, console_laws = load_laws(shard_id)
     anomalies_obj = load_anomalies(shard_id)
     stats = load_stats(shard_id)
+    # World explorer engine
+    engine = RandomizationEngine()
+    try:
+        engine.load_state(WORLD_STATE_PATH)
+    except Exception:
+        # If no world state exists yet or it's invalid, start fresh.
+        pass
 
     traces = trace_log.get("traces", [])
 
@@ -695,11 +705,41 @@ def tron_console_session():
             save_json(MINING_EVENTS_PATH, events_obj)
             save_json(MINING_TOKENS_PATH, tokens_obj)
 
+            # Feed mined token into world engine for region naming context
+            new_token = mining_result.get("new_token")
+            if new_token:
+                try:
+                    engine.register_mined_token(new_token)
+                except Exception:
+                    # World engine failures should not crash the console
+                    pass
+
         if anomaly_result["spawned"]:
             save_json(ANOMALIES_INDEX_PATH, anomalies_obj)
 
         save_json(LAWS_MINING_PATH, mining_laws)
         save_json(LAWS_CONSOLE_PATH, console_laws)
+
+        # --- World exploration step ---
+        try:
+            # Move a fixed number of units per answer
+            units = engine.travel_units(4)
+            current_zone = getattr(engine, "get_current_zone", lambda: None)()
+            current_region = getattr(engine, "get_current_region", lambda: None)()
+
+            if current_zone and getattr(current_zone, "name", None):
+                print(f"[TRON] The shard moves through a zone: {current_zone.name}")
+            if current_region and getattr(current_region, "name", None):
+                print(f"[TRON] The shard now resides within region: {current_region.name}")
+        except Exception:
+            # Never let explorer failures break the console loop
+            pass
+
+        # Persist world state after each turn
+        try:
+            engine.save_state(WORLD_STATE_PATH)
+        except Exception:
+            pass
 
         response_behavior = console_laws.get("response_behavior", {})
         subtle_affirmations = response_behavior.get("subtle_affirmations", True)
